@@ -1,0 +1,30 @@
+\usepackage{polyglossia}
+\setmainlanguage{russian}
+\setotherlanguage{english}
+
+% Основной шрифт (с засечками)
+\setmainfont{Times New Roman}[
+    Script=Cyrillic,
+    Language=Russian
+]
+
+% Шрифт с засечками для кириллицы
+\newfontfamily\cyrillicfont{Times New Roman}[
+    Script=Cyrillic,
+    Language=Russian
+]
+
+% Шрифт без засечек для кириллицы
+\newfontfamily\cyrillicfontsf{Arial}[
+    Script=Cyrillic,
+    Language=Russian
+]
+
+% МОНОШИРИННЫЙ шрифт для кириллицы (тот, которого не хватает)
+\newfontfamily\cyrillicfonttt{Courier New}[
+    Script=Cyrillic,
+    Language=Russian
+]
+
+\usepackage{amsmath}
+\usepackage{amssymb}

@@ -1,0 +1,22 @@
+---
+title: "Лабораторная работа №2: Основные модели"
+author: "Мария Улитина"
+format: 
+  pdf:
+    toc: true
+    number-sections: true
+    include-in-header: 
+      - preamble.tex
+---
+
+# Введение
+Исследуются модели SIR и Лотки-Вольтерры.
+
+# Модель SIR
+{{< include markdown/sir_literate/sir_literate.qmd >}}
+
+# Параметрический анализ SIR
+{{< include markdown/sir_parametric/sir_parametric.qmd >}}
+
+# Модель Лотки-Вольтерры
+{{< include markdown/lv_literate/lv_literate.qmd >}}

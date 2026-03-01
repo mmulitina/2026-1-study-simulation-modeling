@@ -1,0 +1,1218 @@
+{
+  "cells": [
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "# Лабораторная работа №1\n",
+        " \n",
+        "## Модель экспоненциального роста\n",
+        " \n",
+        "### Базовый эксперимент\n",
+        " \n",
+        "\n",
+        "# Параметрическое исследование экспоненциального роста\n",
+        "\n",
+        "## Активация проекта и загрузка пакетов\n",
+        "\n",
+        "**ИЗМЕНЕНИЕ:** Добавлен DrWatson для управления проектом и параметрами\n"
+      ],
+      "id": "5917fffc"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "using DrWatson\n",
+        "@quickactivate \"project\"  # Активация проекта DrWatson\n",
+        "\n",
+        "using DifferentialEquations\n",
+        "using DataFrames\n",
+        "using Plots\n",
+        "using JLD2\n",
+        "using BenchmarkTools"
+      ],
+      "id": "1128b636",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "Установка каталогов\n"
+      ],
+      "id": "1faaa74b"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "script_name = splitext(basename(PROGRAM_FILE))[1]\n",
+        "mkpath(plotsdir(script_name))\n",
+        "mkpath(datadir(script_name))"
+      ],
+      "id": "31809905",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## Определение модели\n",
+        "Модель: $du/dt = α \\cdot u$\n"
+      ],
+      "id": "0433bd97"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "function exponential_growth!(du, u, p, t)\n",
+        "    α = p.α  # **ИЗМЕНЕНИЕ:** Параметры теперь передаются как именованный кортеж\n",
+        "    du[1] = α * u[1]\n",
+        "end"
+      ],
+      "id": "3d871fed",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## Определение параметров в Dict\n",
+        "**ОСНОВНОЕ ИЗМЕНЕНИЕ:** Все параметры собраны в Dict для систематизации\n",
+        "\n",
+        "Базовый набор параметров (один эксперимент)\n"
+      ],
+      "id": "87989cd6"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "base_params = Dict(\n",
+        "    :u0 => [1.0],           # начальная популяция\n",
+        "    :α => 0.3,              # скорость роста\n",
+        "    :tspan => (0.0, 10.0),  # интервал времени\n",
+        "    :solver => Tsit5(),     # метод решения\n",
+        "    :saveat => 0.1,         # шаг сохранения результатов\n",
+        "    :experiment_name => \"base_experiment\"\n",
+        ")\n",
+        "\n",
+        "println(\"Базовые параметры эксперимента:\")\n",
+        "for (key, value) in base_params\n",
+        "    println(\"  $key = $value\")\n",
+        "end"
+      ],
+      "id": "95f55944",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## Функция-обертка для запуска одного эксперимента\n",
+        "**ИСПРАВЛЕНИЕ:** Возвращаем Dict со строковыми ключами\n"
+      ],
+      "id": "5f6dc024"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "function run_single_experiment(params::Dict)\n",
+        "    @unpack u0, α, tspan, solver, saveat = params\n",
+        "    prob = ODEProblem(exponential_growth!, u0, tspan, (α=α,)) # Создаем и решаем задачу\n",
+        "    sol = solve(prob, solver; saveat=saveat)\n",
+        "    final_population = last(sol.u)[1] # Анализ результатов\n",
+        "    doubling_time = log(2) / α\n",
+        "    return Dict(\n",
+        "        \"solution\" => sol,\n",
+        "        \"time_points\" => sol.t,\n",
+        "        \"population_values\" => first.(sol.u),\n",
+        "        \"final_population\" => final_population,\n",
+        "        \"doubling_time\" => doubling_time,\n",
+        "        \"parameters\" => params  # Сохраняем исходные параметры\n",
+        "    ) # Используем строки как ключи для совместимости с DrWatson\n",
+        "end"
+      ],
+      "id": "0ea071ab",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## Запуск базового эксперимента\n",
+        "**ИЗМЕНЕНИЕ:** Используем produce_or_load для автоматического кэширования\n"
+      ],
+      "id": "50bb853c"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "data, path = produce_or_load(\n",
+        "    datadir(script_name, \"single\"),      # Папка для сохранения\n",
+        "    base_params,            # Параметры эксперимента\n",
+        "    run_single_experiment,  # Функция для выполнения\n",
+        "    prefix = \"exp_growth\",  # Префикс имени файла\n",
+        "    tag = false,            # Не добавлять git-тег\n",
+        "    verbose = true\n",
+        ")\n",
+        "\n",
+        "println(\"\\nРезультаты базового эксперимента:\")\n",
+        "println(\"  Финальная популяция: \", data[\"final_population\"])\n",
+        "println(\"  Время удвоения: \", round(data[\"doubling_time\"]; digits=2))\n",
+        "println(\"  Файл результатов: \", path)"
+      ],
+      "id": "bb0a1fe0",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## Визуализация базового эксперимента\n"
+      ],
+      "id": "f5472df1"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "p1 = plot(data[\"time_points\"], data[\"population_values\"],\n",
+        "    label=\"α = $(base_params[:α])\",\n",
+        "    xlabel=\"Время, t\",\n",
+        "    ylabel=\"Популяция, u(t)\",\n",
+        "    title=\"Экспоненциальный рост (базовый эксперимент)\",\n",
+        "    lw=2,\n",
+        "    legend=:topleft,\n",
+        "    grid=true\n",
+        ")"
+      ],
+      "id": "b916c8ec",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "Сохраним график в папку plots\n"
+      ],
+      "id": "823103b8"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "savefig(plotsdir(script_name, \"single_experiment.png\"))"
+      ],
+      "id": "19dec243",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## Параметрическое сканирование\n",
+        "**НОВАЯ СЕКЦИЯ:** Исследование влияния параметра α\n",
+        "\n",
+        "Сетка параметров для сканирования\n"
+      ],
+      "id": "ebcd2e8d"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "param_grid = Dict(\n",
+        "    :u0 => [[1.0]],           # фиксируем начальное условие\n",
+        "    :α => [0.1, 0.3, 0.5, 0.8, 1.0],  # исследуемые значения скорости роста\n",
+        "    :tspan => [(0.0, 10.0)],  # фиксируем интервал времени\n",
+        "    :solver => [Tsit5()],     # фиксируем метод решения\n",
+        "    :saveat => [0.1],         # фиксируем шаг сохранения\n",
+        "    :experiment_name => [\"parametric_scan\"]\n",
+        ")"
+      ],
+      "id": "83f4a9c7",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "Генерация всех комбинаций параметров\n"
+      ],
+      "id": "56ece57c"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "all_params = dict_list(param_grid)\n",
+        "\n",
+        "println(\"\\n\" * \"=\"^60)\n",
+        "println(\"ПАРАМЕТРИЧЕСКОЕ СКАНИРОВАНИЕ\")\n",
+        "println(\"Всего комбинаций параметров: \", length(all_params))\n",
+        "println(\"Исследуемые значения α: \", param_grid[:α])\n",
+        "println(\"=\"^60)"
+      ],
+      "id": "14167eac",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## Запуск всех экспериментов и собор результатов\n",
+        "**НОВАЯ СЕКЦИЯ:** Автоматический запуск и сохранение всех вариантов\n"
+      ],
+      "id": "089a8647"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "all_results = []\n",
+        "all_dfs = []\n",
+        "\n",
+        "for (i, params) in enumerate(all_params)\n",
+        "    println(\"Прогресс: $i/$(length(all_params)) | α = $(params[:α])\")\n",
+        "\n",
+        "    data, path = produce_or_load(\n",
+        "        datadir(script_name, \"parametric_scan\"),  # Данные\n",
+        "        params,                      # Текущий набор параметров\n",
+        "        run_single_experiment,       # Функция для выполнения\n",
+        "        prefix = \"scan\",             # Префикс имени файла\n",
+        "        tag = false,\n",
+        "        verbose = false              # Не выводить подробности для каждого запуска\n",
+        "    ) # Автоматическое сохранение/загрузка каждого эксперимента\n",
+        "\n",
+        "    result_summary = merge(\n",
+        "        params,\n",
+        "        Dict(\n",
+        "            :final_population => data[\"final_population\"],\n",
+        "            :doubling_time => data[\"doubling_time\"],\n",
+        "            :filepath => path  # Путь к сохраненным данным\n",
+        "        )\n",
+        "    ) # Сохраняем сводные результаты (используем символы для параметров, но данные из data - строки)\n",
+        "\n",
+        "    push!(all_results, result_summary)\n",
+        "\n",
+        "    df = DataFrame(\n",
+        "        t = data[\"time_points\"],\n",
+        "        u = data[\"population_values\"],\n",
+        "        α = fill(params[:α], length(data[\"time_points\"]))\n",
+        "    ) # Сохраняем полные данные для визуализации\n",
+        "    push!(all_dfs, df)\n",
+        "end"
+      ],
+      "id": "d7b11de2",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## Анализ и визуализация результатов сканирования\n",
+        "**НОВАЯ СЕКЦИЯ:** Сравнительный анализ всех экспериментов\n",
+        "\n",
+        "Сводная таблица результатов\n"
+      ],
+      "id": "b89913b1"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "results_df = DataFrame(all_results)\n",
+        "println(\"\\nСводная таблица результатов:\")\n",
+        "println(results_df[!, [:α, :final_population, :doubling_time]])"
+      ],
+      "id": "1f2a6003",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "Сравнительный график всех траекторий\n"
+      ],
+      "id": "3611b569"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "p2 = plot(size=(800, 500), dpi=150)\n",
+        "\n",
+        "for params in all_params\n",
+        "\n",
+        "    data, _ = produce_or_load(\n",
+        "        datadir(script_name, \"parametric_scan\"),\n",
+        "        params,\n",
+        "        run_single_experiment,\n",
+        "        prefix = \"scan\"\n",
+        "    ) # Загружаем данные (они уже есть на диске)\n",
+        "\n",
+        "    plot!(p2, data[\"time_points\"], data[\"population_values\"],\n",
+        "        label=\"α = $(params[:α])\",\n",
+        "        lw=2,\n",
+        "        alpha=0.8\n",
+        "    )\n",
+        "end\n",
+        "\n",
+        "plot!(p2,\n",
+        "    xlabel=\"Время, t\",\n",
+        "    ylabel=\"Популяция, u(t)\",\n",
+        "    title=\"Параметрическое исследование: влияние α на рост\",\n",
+        "    legend=:topleft,\n",
+        "    grid=true\n",
+        ")"
+      ],
+      "id": "86e30cca",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "Сохраним график в папку plots\n"
+      ],
+      "id": "ebd390bc"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "savefig(plotsdir(script_name, \"parametric_scan_comparison.png\"))"
+      ],
+      "id": "6bbaad2a",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "График зависимости времени удвоения от α\n"
+      ],
+      "id": "d2abaf20"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "p3 = plot(results_df.α, results_df.doubling_time,\n",
+        "    seriestype=:scatter,\n",
+        "    label=\"Численное решение\",\n",
+        "    xlabel=\"Скорость роста, α\",\n",
+        "    ylabel=\"Время удвоения, t₂\",\n",
+        "    title=\"Зависимость времени удвоения от α\",\n",
+        "    markersize=8,\n",
+        "    markercolor=:red,\n",
+        "    legend=:topright\n",
+        ")"
+      ],
+      "id": "1907e6eb",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "Теоретическая кривая: t₂ = ln(2)/α\n"
+      ],
+      "id": "52677f35"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "α_range = 0.1:0.01:1.0\n",
+        "\n",
+        "plot!(p3, α_range, log(2) ./ α_range,\n",
+        "    label=\"Теория: t₂ = ln(2)/α\",\n",
+        "    lw=2,\n",
+        "    linestyle=:dash,\n",
+        "    linecolor=:blue\n",
+        ")"
+      ],
+      "id": "42db0350",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "Сохраним график в папку plots\n"
+      ],
+      "id": "c712e414"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "savefig(plotsdir(script_name, \"doubling_time_vs_alpha.png\"))"
+      ],
+      "id": "5a4bd00a",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## Бенчмаркинг с разными параметрами\n",
+        "**ИЗМЕНЕНИЕ:** Бенчмаркинг для разных значений α\n"
+      ],
+      "id": "70a9b33c"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "println(\"\\n\" * \"=\"^60)\n",
+        "println(\"Бенчмаркинг для разных значений α\")\n",
+        "println(\"=\"^60)\n",
+        "\n",
+        "benchmark_results = []\n",
+        "for α_value in param_grid[:α]\n",
+        "\n",
+        "    bench_params = Dict(\n",
+        "        :u0 => [1.0],\n",
+        "        :α => α_value,\n",
+        "        :tspan => (0.0, 10.0),\n",
+        "        :solver => Tsit5(),\n",
+        "        :saveat => 0.1\n",
+        "    ) # Подготавливаем параметры для бенчмарка\n",
+        "\n",
+        "    function benchmark_run() # Функция для бенчмарка\n",
+        "        prob = ODEProblem(exponential_growth!,\n",
+        "                         bench_params[:u0],\n",
+        "                         bench_params[:tspan],\n",
+        "                         (α=bench_params[:α],))\n",
+        "        return solve(prob, bench_params[:solver];\n",
+        "                     saveat=bench_params[:saveat])\n",
+        "    end\n",
+        "\n",
+        "    println(\"\\nБенчмарк для α = $α_value:\")\n",
+        "    b = @benchmark $benchmark_run() samples=100 evals=1 # Запуск бенчмарка\n",
+        "    push!(benchmark_results, (α=α_value, time=median(b).time/1e9))  # время в секундах\n",
+        "\n",
+        "    println(\"  Среднее время: \", round(median(b).time/1e9; digits=4), \" сек\")\n",
+        "end"
+      ],
+      "id": "1bd663da",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "График зависимости времени вычисления от α\n"
+      ],
+      "id": "a10f88c3"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "bench_df = DataFrame(benchmark_results)\n",
+        "p4 = plot(bench_df.α, bench_df.time,\n",
+        "    seriestype=:scatter,\n",
+        "    label=\"Время вычисления\",\n",
+        "    xlabel=\"Скорость роста, α\",\n",
+        "    ylabel=\"Время вычисления, сек\",\n",
+        "    title=\"Зависимость времени вычисления от α\",\n",
+        "    markersize=8,\n",
+        "    markercolor=:green,\n",
+        "    legend=:topleft\n",
+        ")"
+      ],
+      "id": "d7533d86",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "Сохраним график в папку plots\n"
+      ],
+      "id": "4b6c8a81"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "savefig(plotsdir(script_name, \"computation_time_vs_alpha.png\"))"
+      ],
+      "id": "78ab3d07",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## Сохранение всех результатов\n",
+        "**НОВАЯ СЕКЦИЯ:** Сохранение сводных данных для последующего анализа\n"
+      ],
+      "id": "cb335563"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "@save datadir(script_name, \"all_results.jld2\") base_params param_grid all_params results_df bench_df\n",
+        "\n",
+        "@save datadir(script_name, \"all_plots.jld2\") p1 p2 p3 p4\n",
+        "\n",
+        "println(\"\\n\" * \"=\"^60)\n",
+        "println(\"ЛАБОРАТОРНАЯ РАБОТА ЗАВЕРШЕНА\")\n",
+        "println(\"=\"^60)\n",
+        "println(\"\\nРезультаты сохранены в:\")\n",
+        "println(\"  • data/$(script_name)/single/              - базовый эксперимент\")\n",
+        "println(\"  • data/$(script_name)/parametric_scan/     - параметрическое сканирование\")\n",
+        "println(\"  • data/$(script_name)/all_results.jld2     - сводные данные\")\n",
+        "println(\"  • plots/$(script_name)/                    - все графики\")\n",
+        "println(\"  • data/$(script_name)/all_plots.jld2      - объекты графиков\")\n",
+        "println(\"\\nДля анализа результатов используйте:\")\n",
+        "println(\"  using JLD2, DataFrames\")\n",
+        "println(\"  @load \\\"data/$(script_name)/all_results.jld2\\\"\")\n",
+        "println(\"  println(results_df)\")"
+      ],
+      "id": "02fad87a",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "### Параметрическое исследование\n",
+        " \n",
+        "\n",
+        "# Параметрическое исследование экспоненциального роста\n",
+        "\n",
+        "## Активация проекта и загрузка пакетов\n",
+        "\n",
+        "**ИЗМЕНЕНИЕ:** Добавлен DrWatson для управления проектом и параметрами\n"
+      ],
+      "id": "a973ded6"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "using DrWatson\n",
+        "@quickactivate \"project\"  # Активация проекта DrWatson\n",
+        "\n",
+        "using DifferentialEquations\n",
+        "using DataFrames\n",
+        "using Plots\n",
+        "using JLD2\n",
+        "using BenchmarkTools"
+      ],
+      "id": "10d18d92",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "Установка каталогов\n"
+      ],
+      "id": "b2975c1b"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "script_name = splitext(basename(PROGRAM_FILE))[1]\n",
+        "mkpath(plotsdir(script_name))\n",
+        "mkpath(datadir(script_name))"
+      ],
+      "id": "01c38017",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## Определение модели\n",
+        "Модель: $du/dt = α \\cdot u$\n"
+      ],
+      "id": "68742ac9"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "function exponential_growth!(du, u, p, t)\n",
+        "    α = p.α  # **ИЗМЕНЕНИЕ:** Параметры теперь передаются как именованный кортеж\n",
+        "    du[1] = α * u[1]\n",
+        "end"
+      ],
+      "id": "c76f8afb",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## Определение параметров в Dict\n",
+        "**ОСНОВНОЕ ИЗМЕНЕНИЕ:** Все параметры собраны в Dict для систематизации\n",
+        "\n",
+        "Базовый набор параметров (один эксперимент)\n"
+      ],
+      "id": "4dc21244"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "base_params = Dict(\n",
+        "    :u0 => [1.0],           # начальная популяция\n",
+        "    :α => 0.3,              # скорость роста\n",
+        "    :tspan => (0.0, 10.0),  # интервал времени\n",
+        "    :solver => Tsit5(),     # метод решения\n",
+        "    :saveat => 0.1,         # шаг сохранения результатов\n",
+        "    :experiment_name => \"base_experiment\"\n",
+        ")\n",
+        "\n",
+        "println(\"Базовые параметры эксперимента:\")\n",
+        "for (key, value) in base_params\n",
+        "    println(\"  $key = $value\")\n",
+        "end"
+      ],
+      "id": "d30197ae",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## Функция-обертка для запуска одного эксперимента\n",
+        "**ИСПРАВЛЕНИЕ:** Возвращаем Dict со строковыми ключами\n"
+      ],
+      "id": "3f4d334f"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "function run_single_experiment(params::Dict)\n",
+        "    @unpack u0, α, tspan, solver, saveat = params\n",
+        "    prob = ODEProblem(exponential_growth!, u0, tspan, (α=α,)) # Создаем и решаем задачу\n",
+        "    sol = solve(prob, solver; saveat=saveat)\n",
+        "    final_population = last(sol.u)[1] # Анализ результатов\n",
+        "    doubling_time = log(2) / α\n",
+        "    return Dict(\n",
+        "        \"solution\" => sol,\n",
+        "        \"time_points\" => sol.t,\n",
+        "        \"population_values\" => first.(sol.u),\n",
+        "        \"final_population\" => final_population,\n",
+        "        \"doubling_time\" => doubling_time,\n",
+        "        \"parameters\" => params  # Сохраняем исходные параметры\n",
+        "    ) # Используем строки как ключи для совместимости с DrWatson\n",
+        "end"
+      ],
+      "id": "44813a09",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## Запуск базового эксперимента\n",
+        "**ИЗМЕНЕНИЕ:** Используем produce_or_load для автоматического кэширования\n"
+      ],
+      "id": "3480724e"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "data, path = produce_or_load(\n",
+        "    datadir(script_name, \"single\"),      # Папка для сохранения\n",
+        "    base_params,            # Параметры эксперимента\n",
+        "    run_single_experiment,  # Функция для выполнения\n",
+        "    prefix = \"exp_growth\",  # Префикс имени файла\n",
+        "    tag = false,            # Не добавлять git-тег\n",
+        "    verbose = true\n",
+        ")\n",
+        "\n",
+        "println(\"\\nРезультаты базового эксперимента:\")\n",
+        "println(\"  Финальная популяция: \", data[\"final_population\"])\n",
+        "println(\"  Время удвоения: \", round(data[\"doubling_time\"]; digits=2))\n",
+        "println(\"  Файл результатов: \", path)"
+      ],
+      "id": "e5f4acf4",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## Визуализация базового эксперимента\n"
+      ],
+      "id": "c7f4855a"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "p1 = plot(data[\"time_points\"], data[\"population_values\"],\n",
+        "    label=\"α = $(base_params[:α])\",\n",
+        "    xlabel=\"Время, t\",\n",
+        "    ylabel=\"Популяция, u(t)\",\n",
+        "    title=\"Экспоненциальный рост (базовый эксперимент)\",\n",
+        "    lw=2,\n",
+        "    legend=:topleft,\n",
+        "    grid=true\n",
+        ")"
+      ],
+      "id": "57f62e49",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "Сохраним график в папку plots\n"
+      ],
+      "id": "e96a3716"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "savefig(plotsdir(script_name, \"single_experiment.png\"))"
+      ],
+      "id": "fcefd8e1",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## Параметрическое сканирование\n",
+        "**НОВАЯ СЕКЦИЯ:** Исследование влияния параметра α\n",
+        "\n",
+        "Сетка параметров для сканирования\n"
+      ],
+      "id": "3efe07c2"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "param_grid = Dict(\n",
+        "    :u0 => [[1.0]],           # фиксируем начальное условие\n",
+        "    :α => [0.1, 0.3, 0.5, 0.8, 1.0],  # исследуемые значения скорости роста\n",
+        "    :tspan => [(0.0, 10.0)],  # фиксируем интервал времени\n",
+        "    :solver => [Tsit5()],     # фиксируем метод решения\n",
+        "    :saveat => [0.1],         # фиксируем шаг сохранения\n",
+        "    :experiment_name => [\"parametric_scan\"]\n",
+        ")"
+      ],
+      "id": "1e1df5e4",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "Генерация всех комбинаций параметров\n"
+      ],
+      "id": "2478fed5"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "all_params = dict_list(param_grid)\n",
+        "\n",
+        "println(\"\\n\" * \"=\"^60)\n",
+        "println(\"ПАРАМЕТРИЧЕСКОЕ СКАНИРОВАНИЕ\")\n",
+        "println(\"Всего комбинаций параметров: \", length(all_params))\n",
+        "println(\"Исследуемые значения α: \", param_grid[:α])\n",
+        "println(\"=\"^60)"
+      ],
+      "id": "6a257676",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## Запуск всех экспериментов и собор результатов\n",
+        "**НОВАЯ СЕКЦИЯ:** Автоматический запуск и сохранение всех вариантов\n"
+      ],
+      "id": "164fb008"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "all_results = []\n",
+        "all_dfs = []\n",
+        "\n",
+        "for (i, params) in enumerate(all_params)\n",
+        "    println(\"Прогресс: $i/$(length(all_params)) | α = $(params[:α])\")\n",
+        "\n",
+        "    data, path = produce_or_load(\n",
+        "        datadir(script_name, \"parametric_scan\"),  # Данные\n",
+        "        params,                      # Текущий набор параметров\n",
+        "        run_single_experiment,       # Функция для выполнения\n",
+        "        prefix = \"scan\",             # Префикс имени файла\n",
+        "        tag = false,\n",
+        "        verbose = false              # Не выводить подробности для каждого запуска\n",
+        "    ) # Автоматическое сохранение/загрузка каждого эксперимента\n",
+        "\n",
+        "    result_summary = merge(\n",
+        "        params,\n",
+        "        Dict(\n",
+        "            :final_population => data[\"final_population\"],\n",
+        "            :doubling_time => data[\"doubling_time\"],\n",
+        "            :filepath => path  # Путь к сохраненным данным\n",
+        "        )\n",
+        "    ) # Сохраняем сводные результаты (используем символы для параметров, но данные из data - строки)\n",
+        "\n",
+        "    push!(all_results, result_summary)\n",
+        "\n",
+        "    df = DataFrame(\n",
+        "        t = data[\"time_points\"],\n",
+        "        u = data[\"population_values\"],\n",
+        "        α = fill(params[:α], length(data[\"time_points\"]))\n",
+        "    ) # Сохраняем полные данные для визуализации\n",
+        "    push!(all_dfs, df)\n",
+        "end"
+      ],
+      "id": "41a923ff",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## Анализ и визуализация результатов сканирования\n",
+        "**НОВАЯ СЕКЦИЯ:** Сравнительный анализ всех экспериментов\n",
+        "\n",
+        "Сводная таблица результатов\n"
+      ],
+      "id": "9b4db8b1"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "results_df = DataFrame(all_results)\n",
+        "println(\"\\nСводная таблица результатов:\")\n",
+        "println(results_df[!, [:α, :final_population, :doubling_time]])"
+      ],
+      "id": "02cdc804",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "Сравнительный график всех траекторий\n"
+      ],
+      "id": "e4fd6162"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "p2 = plot(size=(800, 500), dpi=150)\n",
+        "\n",
+        "for params in all_params\n",
+        "\n",
+        "    data, _ = produce_or_load(\n",
+        "        datadir(script_name, \"parametric_scan\"),\n",
+        "        params,\n",
+        "        run_single_experiment,\n",
+        "        prefix = \"scan\"\n",
+        "    ) # Загружаем данные (они уже есть на диске)\n",
+        "\n",
+        "    plot!(p2, data[\"time_points\"], data[\"population_values\"],\n",
+        "        label=\"α = $(params[:α])\",\n",
+        "        lw=2,\n",
+        "        alpha=0.8\n",
+        "    )\n",
+        "end\n",
+        "\n",
+        "plot!(p2,\n",
+        "    xlabel=\"Время, t\",\n",
+        "    ylabel=\"Популяция, u(t)\",\n",
+        "    title=\"Параметрическое исследование: влияние α на рост\",\n",
+        "    legend=:topleft,\n",
+        "    grid=true\n",
+        ")"
+      ],
+      "id": "308e9fcf",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "Сохраним график в папку plots\n"
+      ],
+      "id": "a8de3322"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "savefig(plotsdir(script_name, \"parametric_scan_comparison.png\"))"
+      ],
+      "id": "e1c01969",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "График зависимости времени удвоения от α\n"
+      ],
+      "id": "a1394747"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "p3 = plot(results_df.α, results_df.doubling_time,\n",
+        "    seriestype=:scatter,\n",
+        "    label=\"Численное решение\",\n",
+        "    xlabel=\"Скорость роста, α\",\n",
+        "    ylabel=\"Время удвоения, t₂\",\n",
+        "    title=\"Зависимость времени удвоения от α\",\n",
+        "    markersize=8,\n",
+        "    markercolor=:red,\n",
+        "    legend=:topright\n",
+        ")"
+      ],
+      "id": "f6c0f391",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "Теоретическая кривая: t₂ = ln(2)/α\n"
+      ],
+      "id": "be6a98ad"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "α_range = 0.1:0.01:1.0\n",
+        "\n",
+        "plot!(p3, α_range, log(2) ./ α_range,\n",
+        "    label=\"Теория: t₂ = ln(2)/α\",\n",
+        "    lw=2,\n",
+        "    linestyle=:dash,\n",
+        "    linecolor=:blue\n",
+        ")"
+      ],
+      "id": "3ed6a0be",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "Сохраним график в папку plots\n"
+      ],
+      "id": "7504632f"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "savefig(plotsdir(script_name, \"doubling_time_vs_alpha.png\"))"
+      ],
+      "id": "14a92f84",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## Бенчмаркинг с разными параметрами\n",
+        "**ИЗМЕНЕНИЕ:** Бенчмаркинг для разных значений α\n"
+      ],
+      "id": "030dba63"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "println(\"\\n\" * \"=\"^60)\n",
+        "println(\"Бенчмаркинг для разных значений α\")\n",
+        "println(\"=\"^60)\n",
+        "\n",
+        "benchmark_results = []\n",
+        "for α_value in param_grid[:α]\n",
+        "\n",
+        "    bench_params = Dict(\n",
+        "        :u0 => [1.0],\n",
+        "        :α => α_value,\n",
+        "        :tspan => (0.0, 10.0),\n",
+        "        :solver => Tsit5(),\n",
+        "        :saveat => 0.1\n",
+        "    ) # Подготавливаем параметры для бенчмарка\n",
+        "\n",
+        "    function benchmark_run() # Функция для бенчмарка\n",
+        "        prob = ODEProblem(exponential_growth!,\n",
+        "                         bench_params[:u0],\n",
+        "                         bench_params[:tspan],\n",
+        "                         (α=bench_params[:α],))\n",
+        "        return solve(prob, bench_params[:solver];\n",
+        "                     saveat=bench_params[:saveat])\n",
+        "    end\n",
+        "\n",
+        "    println(\"\\nБенчмарк для α = $α_value:\")\n",
+        "    b = @benchmark $benchmark_run() samples=100 evals=1 # Запуск бенчмарка\n",
+        "    push!(benchmark_results, (α=α_value, time=median(b).time/1e9))  # время в секундах\n",
+        "\n",
+        "    println(\"  Среднее время: \", round(median(b).time/1e9; digits=4), \" сек\")\n",
+        "end"
+      ],
+      "id": "0bd403a5",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "График зависимости времени вычисления от α\n"
+      ],
+      "id": "4f5c05ed"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "bench_df = DataFrame(benchmark_results)\n",
+        "p4 = plot(bench_df.α, bench_df.time,\n",
+        "    seriestype=:scatter,\n",
+        "    label=\"Время вычисления\",\n",
+        "    xlabel=\"Скорость роста, α\",\n",
+        "    ylabel=\"Время вычисления, сек\",\n",
+        "    title=\"Зависимость времени вычисления от α\",\n",
+        "    markersize=8,\n",
+        "    markercolor=:green,\n",
+        "    legend=:topleft\n",
+        ")"
+      ],
+      "id": "4eea8b0a",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "Сохраним график в папку plots\n"
+      ],
+      "id": "02751dd2"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "savefig(plotsdir(script_name, \"computation_time_vs_alpha.png\"))"
+      ],
+      "id": "6816eb7a",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {},
+      "source": [
+        "## Сохранение всех результатов\n",
+        "**НОВАЯ СЕКЦИЯ:** Сохранение сводных данных для последующего анализа\n"
+      ],
+      "id": "0767b85d"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {},
+      "source": [
+        "@save datadir(script_name, \"all_results.jld2\") base_params param_grid all_params results_df bench_df\n",
+        "\n",
+        "@save datadir(script_name, \"all_plots.jld2\") p1 p2 p3 p4\n",
+        "\n",
+        "println(\"\\n\" * \"=\"^60)\n",
+        "println(\"ЛАБОРАТОРНАЯ РАБОТА ЗАВЕРШЕНА\")\n",
+        "println(\"=\"^60)\n",
+        "println(\"\\nРезультаты сохранены в:\")\n",
+        "println(\"  • data/$(script_name)/single/              - базовый эксперимент\")\n",
+        "println(\"  • data/$(script_name)/parametric_scan/     - параметрическое сканирование\")\n",
+        "println(\"  • data/$(script_name)/all_results.jld2     - сводные данные\")\n",
+        "println(\"  • plots/$(script_name)/                    - все графики\")\n",
+        "println(\"  • data/$(script_name)/all_plots.jld2      - объекты графиков\")\n",
+        "println(\"\\nДля анализа результатов используйте:\")\n",
+        "println(\"  using JLD2, DataFrames\")\n",
+        "println(\"  @load \\\"data/$(script_name)/all_results.jld2\\\"\")\n",
+        "println(\"  println(results_df)\")"
+      ],
+      "id": "5f30abe0",
+      "execution_count": null,
+      "outputs": []
+    }
+  ],
+  "metadata": {
+    "kernelspec": {
+      "name": "julia-1.12",
+      "language": "julia",
+      "display_name": "Julia 1.12",
+      "path": "/home/mmulitina/.local/share/jupyter/kernels/julia-1.12"
+    }
+  },
+  "nbformat": 4,
+  "nbformat_minor": 5
+}
