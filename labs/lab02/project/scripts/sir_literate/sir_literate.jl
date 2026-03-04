@@ -1,0 +1,23 @@
+using DrWatson
+@quickactivate "project"
+using DifferentialEquations, DataFrames, Plots, LaTeXStrings
+
+script_name = splitext(basename(PROGRAM_FILE))[1]
+mkpath(plotsdir(script_name))
+
+function sir_ode!(du, u, p, t)
+    S, I, R = u
+    β, c, γ = p
+    N = S + I + R
+    du[1] = -β * c * I / N * S
+    du[2] = β * c * I / N * S - γ * I
+    du[3] = γ * I
+    nothing
+end
+
+prob = ODEProblem(sir_ode!, [990.0, 10.0, 0.0], (0.0, 40.0), [0.05, 10.0, 0.25])
+sol = solve(prob, dt = 0.1)
+
+df = DataFrame(t=sol.t, S=[u[1] for u in sol.u], I=[u[2] for u in sol.u], R=[u[3] for u in sol.u])
+plt = plot(df.t, [df.S df.I df.R], label=[L"S" L"I" L"R"], title="Модель SIR", lw=2)
+savefig(plt, plotsdir(script_name, "sir_lit.png"))

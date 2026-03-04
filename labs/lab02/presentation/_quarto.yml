@@ -1,6 +1,6 @@
 project:
   title: "presentation"
-  output-dir: "_output"
+
 
 standalone: true
 self-contained: true
@@ -12,6 +12,7 @@ crossref:
   lol-title: Листинги
 format: # Formats
   beamer: # Pdf output format
+    pdf-engine: xelatex
     toc: true
     toc-title: Содержание
     number-sections: false
@@ -24,10 +25,10 @@ format: # Formats
     navigation: horizontal
     csquotes: true
     indent: true
-    include-in-header:
-      - file: _resources/tex/beamer.tex
+
     babel-lang: russian
     babel-otherlangs: english
+
   revealjs: # Html output
     transition: slide
     margin: 0.2

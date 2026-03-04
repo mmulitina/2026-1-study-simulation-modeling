@@ -1,0 +1,11 @@
+# Лабораторная работа №1
+ 
+## Модель экспоненциального роста
+ 
+### Базовый эксперимент
+ 
+{{< include ../labs/lab01/project/markdown/02_exponential_growth/02_exponential_growth.qmd >}}
+ 
+### Параметрическое исследование
+ 
+{{< include ../labs/lab01/project/markdown/03_exponential_growth/03_exponential_growth.qmd >}}

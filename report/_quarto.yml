@@ -1,0 +1,23 @@
+project:
+  title: "Отчёт по лабораторной работе №1"
+  type: book
+
+book:
+  title: "Имитационное моделирование"
+  author: "Maria Ulitina"
+  date: today
+  chapters:
+    - index.qmd
+    - lab01.qmd
+
+format:
+  pdf:
+    documentclass: scrreprt
+    include-in-header: preamble.tex
+    toc: true
+    toc-depth: 2
+    number-sections: true
+
+engine: julia
+julia:
+  exeflags: ["--project=../labs/lab01/project"] 
