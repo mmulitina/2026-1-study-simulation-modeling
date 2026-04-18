@@ -1,0 +1,33 @@
+---
+title: "Лабораторная работа №3:  Агентное моделирование"
+author: "Мария Улитина"
+format: 
+  pdf:
+    toc: true
+    number-sections: true
+    include-in-header: 
+      - preamble.tex
+---
+
+# Введение
+Агентный подход к имитационному моделированию (Agent-Based Modeling, ABM) — это метод исследования сложных систем, в котором поведение системы возникает из взаимодействия множества автономных сущностей, называемых агентами. Вместо того чтобы описывать систему глобальными уравнениями, мы моделируем каждую индивидуальную единицу и правила её поведения, а затем наблюдаем, какие коллективные паттерны появляются снизу вверх. Этот подход особенно полезен, когда поведение системы трудно предсказать из-за нелинейностей, гетерогенности участников или адаптивных стратегий.
+
+# Реализация на Agents.jl
+{{< include markdown/lit_daisyworld/lit_daisyworld.qmd >}}
+
+# Динамика числа маргариток
+{{< include markdown/lit_daisyworld-count/lit_daisyworld-count.qmd >}}
+
+# Базовая визуализация (параметры)
+{{< include markdown/lit_daisyworld-count__param/lit_daisyworld-count__param.qmd >}}
+
+#  Динамика модели
+{{< include markdown/lit_daisyworld-luminosity/lit_daisyworld-luminosity.qmd >}}
+
+# Динамика модели (параметры)
+{{< include markdown/lit_daisyworld-luminosity__param/lit_daisyworld-luminosity__param.qmd >}}
+
+# Динамика модели (параметры)ss
+{{< include markdown/lit_daisyworld__param/lit_daisyworld__param.qmd >}}
+
+
