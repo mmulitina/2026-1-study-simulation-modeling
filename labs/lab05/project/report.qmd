@@ -1,0 +1,24 @@
+---
+title: "Лабораторная работа №5: Основные модели"
+author: "Мария Улитина"
+format: 
+  pdf:
+    toc: true
+    number-sections: true
+    include-in-header: 
+      - preamble.tex
+
+
+---
+
+# Введение
+Исследуются модели SIR и Лотки-Вольтерры.
+
+# Модель SIR
+{{< include markdown/LITdining_philosophers/LITdining_philosophers.qmd >}}
+
+# Параметрический анализ SIR
+{{< include markdown/LITdining_philosophers_animation/LITdining_philosophers_animation.qmd >}}
+
+# Модель Лотки-Вольтерры
+{{< include markdown/LITdining_philosophers_report/LITdining_philosophers_report.qmd >}}
