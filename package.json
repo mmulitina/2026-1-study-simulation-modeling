@@ -1,6 +1,6 @@
 {
   "name": "simulation-modeling",
-  "version": "1.0.2",
+  "version": "1.5.1",
   "description": "Имитационное моделирование",
   "main": "index.js",
   "repository": {
