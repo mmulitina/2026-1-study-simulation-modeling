@@ -1,6 +1,6 @@
 {
   "name": "simulation-modeling",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Имитационное моделирование",
   "main": "index.js",
   "repository": {
@@ -19,7 +19,18 @@
   },
   "homepage": "https://github.com/mmulitina/2026-1-study-simulation-modeling#readme",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "release": "standard-version",
+    "release:minor": "standard-version --release-as minor",
+    "release:major": "standard-version --release-as major",
+    "release:patch": "standard-version --release-as patch",
+    "release:dry": "standard-version --dry-run"
   },
-  "keywords": []
+  "keywords": [],
+  "devDependencies": {
+    "@commitlint/cli": "^20.5.0",
+    "@commitlint/config-conventional": "^20.5.0",
+    "husky": "^9.1.7",
+    "standard-version": "^9.5.0"
+  }
 }
