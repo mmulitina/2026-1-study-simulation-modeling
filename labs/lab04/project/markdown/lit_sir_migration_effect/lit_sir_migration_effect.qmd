@@ -1,0 +1,186 @@
+# Сканирование параметра β (коэффициента заразности)
+
+**Цель:** Исследование влияния коэффициента заразности β на динамику эпидемии
+путём сканирования диапазона значений и усреднения результатов по нескольким запускам.
+
+## Инициализация проекта и загрузка пакетов
+
+scripts/scan_beta.jl
+
+```{julia}
+using DrWatson
+@quickactivate "project"
+
+using Agents, DataFrames, Plots, CSV, Random
+
+include(srcdir("sir_model.jl"))
+```
+
+## Функция для запуска одного эксперимента и возврата метрик
+
+Запускает симуляцию с заданными параметрами и вычисляет:
+- `peak` - пиковая доля инфицированных
+- `final_inf` - конечная доля инфицированных
+- `final_rec` - конечная доля выздоровевших
+- `deaths` - общее количество смертей
+
+```{julia}
+function run_experiment(p)
+    beta = p[:beta]
+    β_und = fill(beta, 3)
+    β_det = fill(beta/10, 3)
+
+    model = initialize_sir(;
+        Ns = p[:Ns],
+        β_und = β_und,
+        β_det = β_det,
+        infection_period = p[:infection_period],
+        detection_time = p[:detection_time],
+        death_rate = p[:death_rate],
+        reinfection_probability = p[:reinfection_probability],
+        Is = p[:Is],
+        seed = p[:seed],
+        n_steps = p[:n_steps],
+    )
+
+    infected_fraction(model) =
+        count(a.status == :I for a in allagents(model)) / nagents(model)
+    peak_infected = 0.0
+
+    for step = 1:p[:n_steps]
+        agent_ids = collect(allids(model))
+        for id in agent_ids
+            agent = try
+                model[id]
+            catch
+                nothing
+            end
+            if agent !== nothing
+                sir_agent_step!(agent, model)
+            end
+        end
+
+        frac = infected_fraction(model)
+        if frac > peak_infected
+            peak_infected = frac
+        end
+    end
+
+    final_infected = infected_fraction(model)
+    final_recovered = count(a.status == :R for a in allagents(model)) / nagents(model)
+    total_deaths = sum(p[:Ns]) - nagents(model)
+
+    return (
+        peak = peak_infected,
+        final_inf = final_infected,
+        final_rec = final_recovered,
+        deaths = total_deaths,
+    )
+end
+```
+
+## Диапазон значений beta и зерна случайных чисел
+
+- `beta_range` - диапазон значений коэффициента заразности от 0.1 до 1.0
+- `seeds` - несколько зерен для усреднения результатов
+
+```{julia}
+beta_range = 0.1:0.1:1.0
+seeds = [42, 43, 44]
+```
+
+## Создание списка параметров
+
+Генерируем все комбинации beta и seed для экспериментов
+
+```{julia}
+params_list = []
+for b in beta_range
+    for s in seeds
+        push!(
+            params_list,
+            Dict(
+                :beta => b,  # скалярное значение
+                :Ns => [1000, 1000, 1000],
+                :infection_period => 14,
+                :detection_time => 7,
+                :death_rate => 0.02,
+                :reinfection_probability => 0.1,
+                :Is => [0, 0, 1],
+                :seed => s,
+                :n_steps => 100,
+            ),
+        )
+    end
+end
+```
+
+## Запуск экспериментов
+
+Последовательно выполняем все эксперименты и собираем результаты
+
+```{julia}
+results = []
+for params in params_list
+    data = run_experiment(params)
+    push!(results, merge(params, Dict(pairs(data))))
+    println("Завершён эксперимент с beta = $(params[:beta]), seed = $(params[:seed])")
+end
+```
+
+## Сохранение всех прогонов
+
+Сохраняем результаты всех экспериментов в CSV файл
+
+```{julia}
+df = DataFrame(results)
+CSV.write(datadir("beta_scan_all.csv"), df)
+```
+
+## Усреднение по повторам
+
+Группируем результаты по значению beta и вычисляем средние значения
+
+```{julia}
+using Statistics
+grouped = combine(
+    groupby(df, [:beta]),
+    :peak => mean => :mean_peak,
+    :final_inf => mean => :mean_final_inf,
+    :deaths => mean => :mean_deaths,
+)
+```
+
+## Построение графика
+
+Визуализируем зависимость:
+- Пик эпидемии (доля инфицированных)
+- Конечная доля инфицированных
+- Доля умерших (относительно начальной численности 3000)
+
+```{julia}
+plot(
+    grouped.beta,
+    grouped.mean_peak,
+    label = "Пик эпидемии",
+    xlabel = "Коэффициент заразности β",
+    ylabel = "Доля инфицированных",
+    marker = :circle,
+    linewidth = 2,
+)
+plot!(
+    grouped.beta,
+    grouped.mean_final_inf,
+    label = "Конечная доля инфицированных",
+    marker = :square,
+)
+plot!(grouped.beta, grouped.mean_deaths ./ 3000, label = "Доля умерших", marker = :diamond)
+savefig(plotsdir("beta_scan.png"))
+```
+
+## Вывод информации о сохранении результатов
+
+```{julia}
+println("Результаты сохранены в data/beta_scan_all.csv и plots/beta_scan.png")
+```
+
