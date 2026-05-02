@@ -1,0 +1,53 @@
+using DrWatson
+@quickactivate "project"
+
+# Создаём папки если их нет
+mkpath(datadir())
+mkpath(plotsdir())
+
+# Простая реализация SIR модели
+using OrdinaryDiffEq, DataFrames, CSV, Plots
+
+function simulate_sir(β, γ, tmax, saveat=0.5)
+    function sir_ode!(du, u, p, t)
+        S, I, R = u
+        β, γ = p
+        N = S + I + R
+        du[1] = -β * S * I / N
+        du[2] = β * S * I / N - γ * I
+        du[3] = γ * I
+    end
+    
+    u0 = [990.0, 10.0, 0.0]
+    tspan = (0.0, tmax)
+    prob = ODEProblem(sir_ode!, u0, tspan, (β, γ))
+    sol = solve(prob, Tsit5(), saveat=saveat)
+    
+    return DataFrame(t=sol.t, S=sol[1,:], I=sol[2,:], R=sol[3,:])
+end
+
+# Параметры сканирования
+β_range = 0.1:0.05:0.8
+γ_fixed = 0.1
+tmax = 100.0
+
+# Цикл по β
+results = []
+for β in β_range
+    df = simulate_sir(β, γ_fixed, tmax)
+    peak_I = maximum(df.I)
+    final_R = df.R[end]
+    push!(results, (β=β, peak_I=peak_I, final_R=final_R))
+    println("β = $β: peak_I = $peak_I, final_R = $final_R")
+end
+
+# Сохранение результатов
+df_scan = DataFrame(results)
+CSV.write(datadir("sir_scan.csv"), df_scan)
+
+# Построение графика
+
+
+println("Сканирование β завершено. Результат в data/sir_scan.csv")
+
+println("Сканирование β завершено. Результат в data/sir_scan.csv")

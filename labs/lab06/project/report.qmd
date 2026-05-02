@@ -1,0 +1,27 @@
+---
+title: "Лабораторная работа №6: Основные модели"
+author: "Мария Улитина"
+format: 
+  pdf:
+    toc: true
+    number-sections: true
+    include-in-header: 
+      - preamble.tex
+
+
+---
+
+# Введение
+Исследуются модели SIR и Лотки-Вольтерры.
+
+# Базовый прогон
+{{< include markdown/LIT_sirpetri_run/LIT_sirpetri_run.qmd >}}
+
+# Коэффициент заражения β
+{{< include markdown/LIT_sirpetri_scan_parameters/LIT_sirpetri_scan_parameters.qmd >}}
+
+# Анимация детерминированной динамики
+{{< include markdown/LIT_sirpetri_animate/LIT_sirpetri_animate.qmd >}}
+
+#  Итоговый отчёт
+{{< include markdown/LIT_sirpetri_report/LIT_sirpetri_report.qmd >}}
