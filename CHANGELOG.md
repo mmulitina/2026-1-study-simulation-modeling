@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.6.0](https://github.com/mmulitina/2026-1-study-simulation-modeling/compare/v1.5.2...v1.6.0) (2026-05-02)
+
+
+### Features
+
+* lab 6 ([810b0f5](https://github.com/mmulitina/2026-1-study-simulation-modeling/commit/810b0f5e8e2d778973fa92f4ef1405cbfe749ae1))
+
 ### [1.5.2](https://github.com/mmulitina/2026-1-study-simulation-modeling/compare/v1.6.1...v1.5.2) (2026-05-02)
 
 ### [1.3.1](https://github.com/mmulitina/2026-1-study-simulation-modeling/compare/v1.1.3...v1.3.1) (2026-03-21)
