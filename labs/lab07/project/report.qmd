@@ -1,0 +1,23 @@
+---
+title: "Лабораторная работа №7: Дискретно-событийное моделирование"
+author: "Мария Улитина"
+format: 
+  pdf:
+    toc: true
+    number-sections: true
+    include-in-header: 
+      - preamble.tex
+
+
+---
+
+# Введение
+Дискретно-событийное моделирование.
+
+#  Модель M/M/c
+{{< include markdown/lit_mmc/lit_mmc.qmd >}}
+
+# Модель Росса
+{{< include markdown/lit_ross/lit_ross.qmd >}}
+
+
