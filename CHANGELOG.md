@@ -61,3 +61,9 @@ All notable changes to this project will be documented in this file. See [standa
   - Процесс make-генерации отчёта (рис. 6)
 
 - Процесс make-генерации отчёта (рис. 6)
+- lab 7 fixed
+- Merge branch 'master' of github.com:mmulitina/2026-1-study-simulation-modeling
+- lab 7
+- Merge pull request #9 from mmulitina/develop
+-  report
+- report
