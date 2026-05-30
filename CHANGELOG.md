@@ -1,4 +1,16 @@
+<<<<<<< HEAD
 # [1.6.0](github.com/mmulitina/2026-1-study-simulation-modeling/compare/v1.7.0...v1.6.0) (2026-05-30)
+=======
+# [1.6.0](github.com/mmulitina/2026-1-study-simulation-modeling/compare/v6.0.0...v1.6.0) (2026-05-30)
+
+# [1.6.0](github.com/mmulitina/2026-1-study-simulation-modeling/compare/v6.0.0...v1.6.0) (2026-05-30)
+
+# Changelog
+
+All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
+
+## [1.6.0](https://github.com/mmulitina/2026-1-study-simulation-modeling/compare/v1.5.2...v1.6.0) (2026-05-02)
+>>>>>>> release/8.0.0
 
 
 ### Features
