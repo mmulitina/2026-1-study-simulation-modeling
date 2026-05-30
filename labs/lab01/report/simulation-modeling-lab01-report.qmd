@@ -63,5 +63,7 @@ license: "CC BY"
 
 # Список литературы{.unnumbered}
 
+{{< include ../project/markdown/01_exponential_growth/01_exponential_growth.qmd >}}
+
 ::: {#refs}
 :::

@@ -1,0 +1,43 @@
+{
+  "name": "standard-changelog",
+  "type": "module",
+  "version": "7.0.1",
+  "description": "Generate a changelog from git metadata with Angular commit convention.",
+  "author": "Steve Mao",
+  "license": "MIT",
+  "homepage": "https://github.com/conventional-changelog/conventional-changelog/tree/master/packages/standard-changelog#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/conventional-changelog/conventional-changelog.git",
+    "directory": "packages/standard-changelog"
+  },
+  "bugs": {
+    "url": "https://github.com/conventional-changelog/conventional-changelog/issues"
+  },
+  "keywords": [
+    "conventional-changelog",
+    "angular",
+    "conventional",
+    "changelog",
+    "log"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "bin": {
+    "standard-changelog": "./dist/cli.js"
+  },
+  "exports": {
+    "types": "./dist/index.d.ts",
+    "import": "./dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "meow": "^13.0.0",
+    "@conventional-changelog/git-client": "^2.2.0",
+    "conventional-changelog-angular": "^8.0.0",
+    "conventional-changelog": "^7.0.1"
+  }
+}

@@ -1,0 +1,19 @@
+---
+title: "Лабораторная работа №2: Основные модели"
+author: "Мария Улитина"
+format: 
+  pdf:
+    toc: true
+    number-sections: true
+    include-in-header: 
+      - preamble.tex
+---
+
+# Введение
+Исследуются модели Модель экспоненциального роста.
+
+# Модель экспоненциального роста
+{{< include /markdown/01_exponential_growth/01_exponential_growth.qmd >}}
+
+# Модель экспоненциального роста с параметрами
+{{< include /markdown/02_exponential_growth/02_exponential_growth.qmd >}}
