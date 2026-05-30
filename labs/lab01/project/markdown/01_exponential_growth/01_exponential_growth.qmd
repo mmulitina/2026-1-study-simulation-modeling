@@ -41,17 +41,18 @@ sol = solve(prob, Tsit5(), saveat=0.1)
 ```
 
 ## Визуализация результатов
-Построим график решения:
+Создаем график и сразу сохраняем без отображения
 
 ```{julia}
-plot(sol, label="u(t)", xlabel="Время t", ylabel="Популяция u",
-     title="Экспоненциальный рост (α = $α)", lw=2, legend=:topleft)
+#p = plot(sol, label="u(t)", xlabel="Время t", ylabel="Популяция u",
 ```
 
-Сохраним график в папку plots
+title="Экспоненциальный рост (α = $α)", lw=2, legend=:topleft)
+
+Сохраняем график в PNG формате
 
 ```{julia}
-savefig(plotsdir(script_name, "exponential_growth_α=$α.png"))
+#savefig(p, plotsdir(script_name, "exponential_growth_α=$α.png"), fmt=:png)
 ```
 
 ## Анализ результатов

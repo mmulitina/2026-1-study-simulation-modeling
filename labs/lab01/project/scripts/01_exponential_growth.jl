@@ -33,12 +33,12 @@ prob = ODEProblem(exponential_growth!, u0, tspan, α)
 sol = solve(prob, Tsit5(), saveat=0.1)
 
 # ## Визуализация результатов
-# Построим график решения:
-plot(sol, label="u(t)", xlabel="Время t", ylabel="Популяция u",
-     title="Экспоненциальный рост (α = $α)", lw=2, legend=:topleft)
+# Создаем график и сразу сохраняем без отображения
+#p = plot(sol, label="u(t)", xlabel="Время t", ylabel="Популяция u",
+        # title="Экспоненциальный рост (α = $α)", lw=2, legend=:topleft)
 
-# Сохраним график в папку plots
-savefig(plotsdir(script_name, "exponential_growth_α=$α.png"))
+# Сохраняем график в PNG формате
+#savefig(p, plotsdir(script_name, "exponential_growth_α=$α.png"), fmt=:png)
 
 # ## Анализ результатов
 # Создадим таблицу с данными:

@@ -22,10 +22,9 @@ tspan = (0.0, 10.0) # временной интервал
 prob = ODEProblem(exponential_growth!, u0, tspan, α)
 sol = solve(prob, Tsit5(), saveat=0.1)
 
-plot(sol, label="u(t)", xlabel="Время t", ylabel="Популяция u",
-     title="Экспоненциальный рост (α = $α)", lw=2, legend=:topleft)
+#p = plot(sol, label="u(t)", xlabel="Время t", ylabel="Популяция u",
 
-savefig(plotsdir(script_name, "exponential_growth_α=$α.png"))
+#savefig(p, plotsdir(script_name, "exponential_growth_α=$α.png"), fmt=:png)
 
 df = DataFrame(t=sol.t, u=first.(sol.u))
 println("Первые 5 строк результатов:")
