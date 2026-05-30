@@ -1,7 +1,36 @@
 # Changelog
+<<<<<<< HEAD
+=======
 
 Все значимые изменения в этом проекте будут документироваться в этом файле.
 
+Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.0.0/),
+и этот проект придерживается [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+#
+
+## [8.0.0] - 2026-05-30
+
+### Добавлено
+- Модель SIR с демографическими событиями
+- Модель SEIR с латентным периодом
+- Функционал вакцинации
+- Анализ чувствительности параметров (β, c, γ)
+- Сравнение стохастической и детерминированной моделей
+- Бенчмаркинг производительности для популяции 10000 индивидов
+
+### Изменено
+- Обновлена визуализация с сохранением в PNG/SVG форматах
+- Улучшена обработка ошибок при построении графиков
+
+### Исправлено
+- Проблема с сохранением графиков в формате PDF вместо PNG/SVG
+- Ошибка при создании релиз-бранчей в git flow
+>>>>>>> ba1e453a22f2233ec1f767d649a5bdfa464058ca
+
+Все значимые изменения в этом проекте будут документироваться в этом файле.
+
+<<<<<<< HEAD
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.0.0/),
 и этот проект придерживается [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
@@ -38,3 +67,9 @@
 [Unreleased]: https://github.com/yourusername/ulation-modeling/compare/v8.0.0...HEAD
 [8.0.0]: https://github.com/yourusername/ulation-modeling/compare/v1.0.1...v8.0.0
 
+=======
+---
+
+[Unreleased]: https://github.com/yourusername/ulation-modeling/compare/v8.0.0...HEAD
+[8.0.0]: https://github.com/yourusername/ulation-modeling/compare/v1.0.1...v8.0.0
+>>>>>>> ba1e453a22f2233ec1f767d649a5bdfa464058ca
